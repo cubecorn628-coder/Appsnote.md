@@ -1,0 +1,6 @@
+{
+  "name": "LokalNote",
+  "description": "A secure, offline-first Markdown notes editor with folder organization, instant preview, and media embedding support.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
