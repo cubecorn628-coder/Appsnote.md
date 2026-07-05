@@ -50,13 +50,14 @@ fun AutocompleteToolbar(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .height(52.dp),
+            .windowInsetsPadding(WindowInsets.navigationBars),
         tonalElevation = 6.dp,
         color = MaterialTheme.colorScheme.surfaceVariant
     ) {
         Row(
             modifier = Modifier
-                .fillMaxSize()
+                .fillMaxWidth()
+                .height(52.dp)
                 .horizontalScroll(rememberScrollState())
                 .padding(horizontal = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
