@@ -1,0 +1,85 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Tag name for the release (e.g., v1.0.0)'
+        required: true
+        default: 'v1.0.0'
+      release_title:
+        description: 'Title of the release'
+        required: true
+        default: 'LokalNote Release'
+      release_notes:
+        description: 'Release changelog notes'
+        required: false
+        default: 'Pembaruan dan peningkatan performa.'
+
+jobs:
+  build-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Validate Gradle Wrapper
+        uses: gradle/actions/wrapper-validation@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: 17
+          distribution: "temurin"
+          cache: 'gradle'
+
+      - name: Decrypt Keystore (Optional)
+        # Allows user to pass custom base64-encoded keystore via secrets
+        run: |
+          if [ ! -empty "${{ secrets.KEYSTORE_BASE64 }}" ]; then
+            echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > my-upload-key.jks
+          fi
+        shell: bash
+
+      - name: Build Release APKs
+        run: |
+          # If keystore isn't provided, we can either build unsigned release or use a dummy keystore so the build succeeds.
+          # Here we build the split APKs for armeabi-v7a, arm64-v8a, x86, x86_64 and universal.
+          ./gradlew assembleRelease --stacktrace -DskipFormatKtlint
+        env:
+          STORE_PASSWORD: ${{ secrets.STORE_PASSWORD || 'android' }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD || 'android' }}
+          KEYSTORE_PATH: ${{ github.workspace }}/my-upload-key.jks
+
+      - name: Rename and Organize APKs
+        run: |
+          mkdir -p release-artifacts
+          find app/build/outputs/apk/release/ -name "*.apk" -exec cp {} release-artifacts/ \;
+          echo "Daftar berkas rilis:"
+          ls -lh release-artifacts/
+        shell: bash
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.tag_name || github.ref_name }}
+          name: ${{ github.event.inputs.release_title || github.ref_name }}
+          body: |
+            ## Catatan Perubahan (Changelog)
+            ${{ github.event.inputs.release_notes || 'Rilis otomatis dari commit terbaru.' }}
+            
+            ### Informasi Berkas (File Info)
+            Tersedia APK terpisah untuk berbagai arsitektur CPU (ABI) guna menghemat ruang penyimpanan perangkat:
+            - **Universal**: Berisi semua arsitektur.
+            - **Arm64-v8a**: Untuk perangkat Android modern 64-bit.
+            - **Armeabi-v7a**: Untuk perangkat Android lama 32-bit.
+            - **X86 / X86_64**: Untuk emulator dan perangkat berbasis Intel/AMD.
+          draft: false
+          prerelease: false
+          files: |
+            release-artifacts/*.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
