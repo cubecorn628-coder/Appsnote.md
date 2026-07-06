@@ -35,11 +35,8 @@ fun MarkdownRenderer(
 ) {
     val colors = markdownColor(
         text = MaterialTheme.colorScheme.onSurface,
-        codeText = MaterialTheme.colorScheme.onSurfaceVariant,
         codeBackground = MaterialTheme.colorScheme.surfaceVariant,
-        inlineCodeText = MaterialTheme.colorScheme.onSurfaceVariant,
         inlineCodeBackground = MaterialTheme.colorScheme.surfaceVariant,
-        linkText = MaterialTheme.colorScheme.primary,
         dividerColor = MaterialTheme.colorScheme.outlineVariant,
     )
 
